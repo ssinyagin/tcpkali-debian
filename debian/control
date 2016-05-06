@@ -1,0 +1,17 @@
+Source: tcpkali
+Section: net
+Priority: optional
+Maintainer: Stanislav Sinyagin <ssinyagin@k-open.com>
+Build-Depends: debhelper (>= 9), cdbs, dh-autoreconf, bison, libncurses-dev,
+    libtinfo-dev, libc-dev, libtool
+Standards-Version: 3.9.5
+Homepage: https://github.com/machinezone/tcpkali
+Vcs-Git: https://github.com/machinezone/tcpkali.git
+Vcs-Browser: https://github.com/machinezone/tcpkali
+
+Package: tcpkali
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: TCP and WebSocket load generator and sink
+    tcpkali allows generating a TCP or WebSocket traffic load for
+    performance testing purposes.
