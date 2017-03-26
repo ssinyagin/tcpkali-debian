@@ -5,7 +5,7 @@ Debian packaging for tcpkali
 Creating a Jessie package
 -------------------------
 
-apt-get install -y git-buildpackage
+apt-get install -y cdbs dh-autoreconf git-buildpackage
 cowbuilder --create --distribution jessie
 
 mkdir /usr/local/src/tcpkali-deb
