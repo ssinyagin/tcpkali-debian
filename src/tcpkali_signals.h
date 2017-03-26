@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2014  Machine Zone, Inc.
- * 
+ *
  * Original author: Lev Walkin <lwalkin@machinezone.com>
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -27,6 +27,8 @@
 #ifndef TCPKALI_SIGNAL_H
 #define TCPKALI_SIGNAL_H
 
+#include <signal.h>
+
 /*
  * Protect this thread from receiving term (SIGINT) signals.
  */
@@ -35,6 +37,6 @@ void block_term_signals();
 /*
  * Unblock term signals (SIGINT) and handle it by setting a flag.
  */
-void flagify_term_signals(int *flag);
+void flagify_term_signals(volatile sig_atomic_t *flag);
 
-#endif  /* TCPKALI_SIGNAL_H */
+#endif /* TCPKALI_SIGNAL_H */

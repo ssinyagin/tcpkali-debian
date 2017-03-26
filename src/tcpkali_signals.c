@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2014  Machine Zone, Inc.
- * 
+ * Copyright (c) 2014, 2016  Machine Zone, Inc.
+ *
  * Original author: Lev Walkin <lwalkin@machinezone.com>
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -28,14 +28,28 @@
 #define _POSIX_C_SOURCE 200112
 #define _XOPEN_SOURCE 600
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <signal.h>
 
 #include "tcpkali_terminfo.h"
 
-static int *flagvar;
-static void signal_handler(int __attribute__((unused)) sig) {
-    fprintf(stderr, "%sCtrl+C pressed, finishing up...\n", tcpkali_clear_eol());
+static struct {
+    size_t len;
+    char buf[64];
+} ctrlc_message;
+
+static volatile sig_atomic_t *flagvar;
+static void
+signal_handler(int __attribute__((unused)) sig) {
+    /* Wait until another thread output Ctrl+C notice to standard error. */
+
+    /* If we can't write to stderr atomically when the user is
+     * interrupting the program, we have a bigger mess;
+     * don't attempt to rectify it here. Partial write is ok.
+     */
+    (void)write(STDERR_FILENO, ctrlc_message.buf, ctrlc_message.len);
+
     *flagvar = 1;
 }
 
@@ -48,8 +62,17 @@ block_term_signals() {
 }
 
 void
-flagify_term_signals(int *flag) {
+flagify_term_signals(volatile sig_atomic_t *flag) {
     sigset_t set;
+
+    /* Pre-create the Ctrl+C message to be async-signal-safe. */
+    int len =
+        snprintf(ctrlc_message.buf, sizeof(ctrlc_message.buf),
+                 "%sCtrl+C pressed, finishing up...\n", tcpkali_clear_eol());
+    if(len > 0 && (size_t)len < sizeof(ctrlc_message.buf)) {
+        ctrlc_message.len = len;
+    }
+
     sigemptyset(&set);
     sigaddset(&set, SIGINT);
     sigprocmask(SIG_UNBLOCK, &set, 0);
@@ -62,4 +85,3 @@ flagify_term_signals(int *flag) {
     flagvar = flag;
     sigaction(SIGINT, &act, 0);
 }
-

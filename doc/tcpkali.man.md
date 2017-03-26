@@ -1,6 +1,6 @@
 % tcpkali(1) TCPKali user manual
 % Lev Walkin <lwalkin@machinezone.com>
-% 2016-01-15
+% 2017-01-20
 
 # NAME
 
@@ -82,6 +82,9 @@ open more than 64k connections to destinations.
 --ws, --websocket
 :   Use RFC6455 WebSocket transport.
 
+-H, --header
+:   Add HTTP header into the WebSocket handshake.
+
 -c, --connections *N*
 :   Number of concurrent connections to open to the destinations. Default is 1.
 
@@ -118,23 +121,39 @@ open more than 64k connections to destinations.
     Transforms \\xxx sequences into bytes with the corresponding octal values,
     \\n into a newline character, etc.
 
---first-message <string>
+-1, --first-message <string>
 :   Send this message first, once at the beginning of each connection.
+    This option can be specified several times to send several initial
+    messages at the beginning of each connection. If **--websocket** option
+    is given, each message is wrapped into its own WebSocket frame.
 
 --first-message-file *filename*
 :   Read the message from a file and send it once at the beginning of each connection.
+    This option can be specified several times.
 
 -m, --message *string*
 :   Repeatedly send the specified message to each destination.
+    This option can be specified several times.
+
+--message-stop *string*
+:   Terminate tcpkali if the given string is encountered in the incoming byte stream.
 
 -f, --message-file *filename*
 :   Repeatedly send the message read from the file to each destination.
+    This option can be specified several times.
 
 -r, --message-rate *Rate*
 :   Messages per second to send in a connection. tcpkali attempts to preserve
     message boundaries. This setting is mutually incompatible with the
     **--channel-bandwidth-upstream** option, because they both control
     the message sending rate.
+
+-r, --message-rate @*Latency*
+:   Instead of specifying the message rate, attempt to figure out the
+    maximum message rate that does not result in exceeding the given
+    message latency. Requires **--latency-marker** option to be set.
+
+    EXAMPLE: tcpkali **-m** "PING" **--latency-marker** "PONG" -r **@100ms**
 
 ### Traffic content expressions
 
@@ -149,6 +168,19 @@ Expression          Description
 
  connection.ptr     Pointer to a connection structure. Don't use.
 
+ connection.re      Randomized expression, unique per connection.
+
+ global.re          Randomized expression, same across all connections.
+
+ re                 Randomized expression, for each message.
+
+ message.marker     Produce a message timestamp for message rate and latency
+                    measurements.
+
+ ws.continuation,   Specify WebSocket frame types.
+ ws.ping, ws.pong,  Refer to RFC 6455, section 11.8.
+ ws.text, ws.binary
+
  EXPRESSION % *int* Remainder of the expression value divided by *int*.
 -----------------------------------------------------------------------
 : Expressions can be of the following forms:
@@ -158,6 +190,10 @@ outgoing data stream. For example, the following command line might be used to
 load 10 different resources from an HTTP server:
 
 tcpkali **-em** `'GET /image-\{connection.uid%10}.jpg\r\n\r\n'` ...
+
+The following command is used to come up with random alphanumeric identifiers:
+
+tcpkali **-em** `'GET /image-\{re [a-z0-9]+}.jpg\r\n\r\n'` ...
 
 Expressions are evaluated even if the **-e** option is not given.
 
@@ -190,6 +226,13 @@ and the time the latency marker is observed in the downstream traffic
     Mean and maximum values can be reported using **--latency-percentiles 50,100**.
     Default is `95,99,99.5`.
 
+--message-marker
+:   Passive mode detection or message markers. Given this option, tcpkali
+    will detect the \\{message.marker} byte sequences and will calculate
+    message rate (in messages per second) and message arrival latency.
+    In the active mode, message rate calculation is implicitly enabled by
+    using the \\{message.marker} expression.
+
 ## STATSD OPTIONS
 
 --statsd
@@ -204,23 +247,31 @@ and the time the latency marker is observed in the downstream traffic
 --statsd-namespace *string*
 :   Metric namespace. Default is "tcpkali".
 
+--statsd-latency-window *Time*
+:   By default latencies are measured across the entire duration of
+    tcpkali's run (as set by **--duration** or **-T**).
+    This option instructs tcpkali to flush latency data to StatsD every *Time*
+    period and start measuring latencies anew.
+    The latencies that are displayed in the user interface remain being
+    collected across the whole run.
+
 # VARIABLE UNITS
 
 -----------------------------------------------------------------------
-Placeholder    Recognized unit suffixes
--------------- --------------------------------------------------------
-*N* and *Rate* k (1000, as in "5k" equals to 5000), m (1000000).
+Placeholder       Recognized unit suffixes
+----------------  -----------------------------------------------------
+*N* and *Rate*    k (1000, as in "5k" equals to 5000), m (1000000).
 
-*SizeBytes*    k (1024, as in "5k" equals to 5120), m (1024*1024).
+*SizeBytes*       k (1024, as in "5k" equals to 5120), m (1024*1024).
 
-*Bandwidth*    kbps, Mbps (for bits per second),
-               kBps,\ MBps\ (for\ bytes\ per\ second).
+*Bandwidth*       kbps, Mbps (for bits per second),
+                  kBps,\ MBps\ (for\ bytes\ per\ second).
 
-*Time*         ms, s, m, h, d (milliseconds, seconds, minutes, etc).
+*Time*, *Latency* ms, s, m, h, d (milliseconds, seconds, etc).
 -----------------------------------------------------------------------
 Table: tcpkali recognizes a number of suffixes for numeric values.
 
-*Rate* and *Time* can be fractional values, such as 0.25.
+*Rate*, *Time* and *Latency* can be fractional values, such as 0.25.
 
 # EXAMPLES
 

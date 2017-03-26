@@ -29,6 +29,7 @@
 | Mac OS X | [Homebrew](http://brew.sh/)             | `brew install tcpkali` |
 | Mac OS X | [MacPorts](https://www.macports.org/)   | `port install tcpkali` |
 | FreeBSD  | [pkgng](https://wiki.freebsd.org/pkgng) | `pkg install tcpkali`  |
+| Linux    | [nix](https://nixos.org/nix/)           | `nix-env -i tcpkali`   |
 
 ## From sources
 
@@ -40,6 +41,7 @@ Install the following packages first:
  * bison
  * flex
  * gcc-c++
+ * ncurses-devel or equivalent ncurses package, *optional*.
 
 **Build and install:**
 
@@ -50,7 +52,7 @@ Install the following packages first:
 
 [![Build Status](https://travis-ci.org/machinezone/tcpkali.svg?branch=master)](https://travis-ci.org/machinezone/tcpkali)
 
-# Usage
+# Usage (Short version)
 
     Usage: tcpkali [OPTIONS] [-l <port>] [<host:port>...]
     Where some OPTIONS are:
@@ -64,6 +66,7 @@ Install the following packages first:
       -T <Time=10s>        Exit after the specified amount of time
 
       -e                   Unescape backslash-escaping in a message string
+      -1 <string>          Message to send to the remote host once
       -m <string>          Message to repeatedly send to the remote
       -r <Rate>            Messages per second to send in a connection
 
@@ -76,7 +79,11 @@ You can get the full list of options using `tcpkali --help`, from
 `man tcpkali`, and by consulting the
 [tcpkali man page source](doc/tcpkali.man.md).
 
-# TCP Examples
+# Usage Examples
+<details>
+<summary>A few command line examples</summary>
+
+## TCP Examples
 
 Connect to a local web server and do nothing:
 
@@ -107,7 +114,7 @@ Listen for incoming connections and throw away data for 3 hours:
     tcpkali --listen-port 12345 --duration 3h
     tcpkali -l12345 -T3h
 
-# WebSocket examples
+## WebSocket examples
 
 Open connection to the local WebSocket server, send hello, and wait:
 
@@ -115,9 +122,10 @@ Open connection to the local WebSocket server, send hello, and wait:
 
 Open connection to the local server and send tons of empty JSON frames:
 
-    tcpkali --websocket --message "{}" 127.1:80
+    tcpkali --websocket --message "\{ws.text}" 127.1:80
 
-Open connection to the local server and send a JSON frame every second:
+Send a binary frame with a picture every second (angle brackets are literal):
 
-    tcpkali --ws -m "{}" -r1 127.1:80
+    tcpkali --ws -m "\{ws.binary <image.png>}" -r1 127.1:80
 
+</details>

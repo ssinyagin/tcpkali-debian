@@ -1,4 +1,4 @@
-AC_INIT(tcpkali, 0.8, lwalkin@machinezone.com)
+AC_INIT([tcpkali],[1.1.1],[lwalkin@machinezone.com])
 
 AC_CONFIG_SRCDIR([src/tcpkali.c])
 AC_CONFIG_AUX_DIR(config)
@@ -7,12 +7,19 @@ AC_CONFIG_MACRO_DIR(m4)
 
 AC_CONFIG_HEADER([config.h])
 
-AM_PROG_LIBTOOL
+LT_INIT
 
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
 AM_PROG_LEX
+
+AX_PTHREAD([])
+dnl Global CFLAGS, for tcpkali and its third-party dependencies.
+
+CC="${PTHREAD_CC}"
+LIBS="${PTHREAD_LIBS} ${LIBS}"
+CFLAGS="${CFLAGS} ${PTHREAD_CFLAGS}"
 
 AC_CHECK_PROGS([YACC], ['bison -y' byacc])
 AS_IF([test "x${YACC}" == "x"], [AC_MSG_ERROR([
@@ -29,9 +36,6 @@ m4_include([m4/ax_make_optional_include.m4])
 
 AX_CHECK_GNU_STYLE_OPTIONAL_INCLUDE()
 
-dnl Global CFLAGS, for tcpkali and its third-party dependencies.
-AX_CHECK_COMPILE_FLAG([-pthread], [CFLAGS="$CFLAGS -pthread"])
-
 dnl tcpkali-specific CFLAGS.
 AX_CHECK_COMPILE_FLAG([-W], [TK_CFLAGS="$TK_CFLAGS -W"])
 AX_CHECK_COMPILE_FLAG([-Wall], [TK_CFLAGS="$TK_CFLAGS -Wall"])
@@ -46,6 +50,7 @@ AC_CHECK_SIZEOF([size_t])
 AC_CHECK_HEADERS(sched.h uv.h)
 AC_CHECK_FUNCS(sched_getaffinity)
 AC_CHECK_FUNCS(sysctlbyname)
+AC_CHECK_FUNCS(srandomdev)
 
 AC_ARG_WITH([libuv],
     [AS_HELP_STRING([--with-libuv],
@@ -80,7 +85,9 @@ AC_ARG_ENABLE([asan],
         AC_MSG_FAILURE(
             [--enable-asan is given, but not supported on this platform.
  Check out https://code.google.com/p/address-sanitizer/wiki/HowToBuild])])
-    dnl Keep error messages nice.
+    dnl Keep error messages nice. Also consider:
+    dnl export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
+    dnl export ASAN_OPTIONS=symbolize=1
     AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer],
                           [CFLAGS="$CFLAGS -fno-omit-frame-pointer"],
                           [], [${TK_CFLAGS}])
@@ -112,6 +119,10 @@ dnl We use pandoc to generate documentation.
 AC_PATH_PROG([PANDOC], pandoc)
 AM_CONDITIONAL([HAVE_PANDOC], [test -n "$PANDOC"])
 
+dnl Use clang-format to standardize on a style.
+AC_PATH_PROG([CLANG_FORMAT], clang-format, [:])
+AM_CONDITIONAL([HAVE_CLANG_FORMAT], [test "${CLANG_FORMAT}" != ":"])
+
 dnl Python is used for tests.
 AM_PATH_PYTHON(,, [:])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
@@ -133,6 +144,7 @@ AC_CONFIG_FILES([Makefile
                  deps/libstatsd/Makefile
                  deps/libstatsd/man/Makefile
                  deps/libstatsd/src/Makefile
+                 deps/pcg-c-basic/Makefile
                  deps/HdrHistogram/Makefile
                  deps/boyer-moore-horspool/Makefile
                 ])

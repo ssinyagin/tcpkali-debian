@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015  Machine Zone, Inc.
- * 
+ * Copyright (c) 2015, 2016, 2017  Machine Zone, Inc.
+ *
  * Original author: Lev Walkin <lwalkin@machinezone.com>
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -31,7 +31,38 @@
 #include <inttypes.h>
 #include <assert.h>
 
-#define UNUSED  __attribute__((unused))
-#define PRINTFLIKE(n,m)  __attribute__((format(printf,n,m)))
+#define UNUSED __attribute__((unused))
+#define PRINTFLIKE(n, m) __attribute__((format(printf, n, m)))
 
-#endif  /* TCPKALI_COMMON_H */
+/*
+ * Requested types of latency measurement.
+ */
+typedef enum {
+    SLT_CONNECT = (1 << 0),
+    SLT_FIRSTBYTE = (1 << 1),
+    SLT_MARKER = (1 << 2)
+} statsd_report_latency_types;
+
+#define MESSAGE_MARKER_TOKEN "TCPKaliMsgTS-"
+
+/*
+ * Snapshot of the current latency.
+ */
+struct latency_snapshot {
+    struct hdr_histogram *connect_histogram;
+    struct hdr_histogram *firstbyte_histogram;
+    struct hdr_histogram *marker_histogram;
+};
+
+/*
+ * Array of doubles used in e.g. overriding reported latency percentiles.
+ */
+struct percentile_values {
+    size_t size;
+    struct percentile_value {
+        double value_d;
+        char value_s[sizeof("100.123")];
+    } *values;
+};
+
+#endif /* TCPKALI_COMMON_H */

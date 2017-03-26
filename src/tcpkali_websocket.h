@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2014  Machine Zone, Inc.
- * 
+ *
  * Original author: Lev Walkin <lwalkin@machinezone.com>
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -27,10 +27,24 @@
 #ifndef TCPKALI_WEBSOCKET_H
 #define TCPKALI_WEBSOCKET_H
 
+#include "tcpkali_common.h"
+
 /*
  * Establish the maximum size of the WebSocket frame header.
  */
-#define  WEBSOCKET_MAX_FRAME_HDR_SIZE    (2+8+4)
+#define WEBSOCKET_MAX_FRAME_HDR_SIZE (2 + 8 + 4)
+
+/*
+ * Available WebSocket frame opcodes.
+ */
+enum ws_frame_opcode {
+    WS_OP_CONTINUATION = 0x0,
+    WS_OP_TEXT_FRAME = 0x1,
+    WS_OP_BINARY_FRAME = 0x2,
+    WS_OP_CLOSE = 0x8,
+    WS_OP_PING = 0x9,
+    WS_OP_PONG = 0xA
+};
 
 /*
  * Write out a frame header to prefix a payload of given size.
@@ -41,10 +55,9 @@ enum websocket_side {
     WS_SIDE_CLIENT,
     WS_SIDE_SERVER,
 };
-size_t websocket_frame_header(size_t payload_size,
-                              uint8_t *buf, size_t size,
-                              enum websocket_side);
-
+size_t websocket_frame_header(uint8_t *buf, size_t size, enum websocket_side,
+                              enum ws_frame_opcode, int reserved, int fin,
+                              size_t payload_size);
 
 /*
  * Detect the Websocket handshake in the stream and accept the handshake.
@@ -57,4 +70,4 @@ typedef enum {
 } http_detect_websocket_rval;
 http_detect_websocket_rval http_detect_websocket(int fd, const char *, size_t);
 
-#endif  /* TCPKALI_WEBSOCKET_H */
+#endif /* TCPKALI_WEBSOCKET_H */
