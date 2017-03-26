@@ -1,3 +1,9 @@
+tcpkali (1.1.1-1) unstable; urgency=low
+
+  * Update to 1.1.1
+
+ -- Stanislav Sinyagin <ssinyagin@k-open.com>  Thu, 26 Mar 2017 22:30:25 +0200
+
 tcpkali (0.8-1) unstable; urgency=low
 
   * Initial release
